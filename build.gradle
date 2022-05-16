@@ -14,9 +14,9 @@
  */
 
 plugins {
-	id 'java'
-	id 'application'
-	id "org.beryx.jlink" version "2.14.0"
+    id 'java'
+    id 'application'
+    id "org.beryx.jlink" version "2.14.0"
 }
 
 sourceCompatibility = '9'
@@ -41,151 +41,148 @@ ext.moduleName = 'org.aph.braillezephyr'
 String swtVersion = '3.+'
 
 String swtName
-switch(System.getProperty('os.name').toLowerCase().split()[0])
-{
-case 'mac':
+switch (System.getProperty('os.name').toLowerCase().split()[0]) {
+    case 'mac':
 
-	swtName = 'org.eclipse.swt.cocoa.macosx.x86_64'
-	applicationDefaultJvmArgs.add('-XstartOnFirstThread')
-	break
+        swtName = 'org.eclipse.swt.cocoa.macosx.x86_64'
+        applicationDefaultJvmArgs.add('-XstartOnFirstThread')
+        break
 
-case 'windows':
+    case 'windows':
 
-	swtName = 'org.eclipse.swt.win32.win32.x86_64'
-	new File(project.getBuildDir().getPath() + '\\AppData\\Local\\BrailleZephyr\\' + version).mkdirs()
-	break
+        swtName = 'org.eclipse.swt.win32.win32.x86_64'
+        new File(project.getBuildDir().getPath() + '\\AppData\\Local\\BrailleZephyr\\' + version).mkdirs()
+        break
 
-case 'linux':
-default:
+    case 'linux':
+    default:
 
-	swtName = 'org.eclipse.swt.gtk.linux.x86_64'
-	new File(project.getBuildDir().getPath() + '/.config/BrailleZephyr/').mkdirs()
-	break
+        swtName = 'org.eclipse.swt.gtk.linux.x86_64'
+        new File(project.getBuildDir().getPath() + '/.config/BrailleZephyr/').mkdirs()
+        break
 }
 
 repositories {
-	mavenLocal()
-	mavenCentral()
+    mavenLocal()
+    mavenCentral()
 }
 
 configurations {
-	swtModulize
+    swtModulize
 }
 
 //   deal with ${osgi.platform}
 configurations.all {
-	resolutionStrategy {
-		dependencySubstitution {
-			substitute module('org.eclipse.platform:org.eclipse.swt.${osgi.platform}') with module("org.eclipse.platform:$swtName:$swtVersion")
-		}
-	}
+    resolutionStrategy {
+        dependencySubstitution {
+            substitute module('org.eclipse.platform:org.eclipse.swt.${osgi.platform}') with module("org.eclipse.platform:$swtName:$swtVersion")
+        }
+    }
 }
 
 dependencies {
-	//	implementation group: 'org.eclipse.platform', name: swtName, version: swtVersion   // or name:  'org.eclipse.swt'?
-	implementation files("build/dependencies/org.eclipse.swt.jar")
-	swtModulize group: 'org.eclipse.platform', name: swtName, version: swtVersion
-	swtModulize group: 'org.eclipse.platform', name: swtName, version: swtVersion, classifier: 'sources'
-	swtModulize group: 'org.eclipse.platform', name: swtName, version: swtVersion, classifier: 'javadoc'
+    //	implementation group: 'org.eclipse.platform', name: swtName, version: swtVersion   // or name:  'org.eclipse.swt'?
+    implementation files("build/dependencies/org.eclipse.swt.jar")
+    swtModulize group: 'org.eclipse.platform', name: swtName, version: swtVersion
+    swtModulize group: 'org.eclipse.platform', name: swtName, version: swtVersion, classifier: 'sources'
+    swtModulize group: 'org.eclipse.platform', name: swtName, version: swtVersion, classifier: 'javadoc'
 
-	archives group: 'org.eclipse.platform', name: swtName, version: swtVersion
-	//	archives files("build/dependencies/org.eclipse.swt.jar")
+    archives group: 'org.eclipse.platform', name: swtName, version: swtVersion
+    //	archives files("build/dependencies/org.eclipse.swt.jar")
 }
 
 compileJava {
-	inputs.property("moduleName", moduleName)
-	doFirst {
-		options.compilerArgs = [
-			'--module-path', classpath.asPath,
-			'-encoding', 'utf8'
-		]
-		classpath = files()
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.asPath,
+                '-encoding', 'utf8'
+        ]
+        classpath = files()
 
-		copy {
-			from configurations.swtModulize
-			into 'build/tmp/swt'
-		}
+        copy {
+            from configurations.swtModulize
+            into 'build/tmp/swt'
+        }
 
-		copy {
-			from 'build/tmp/swt'
-			include 'org.*.swt.*.jar'
-			into 'build/dependencies'
-			rename 'org.*.swt.*[0-9].jar', 'org.eclipse.swt.jar'
-			rename 'org.*.swt.*[0-9]-sources.jar', 'org.eclipse.swt-sources.jar'
-			rename 'org.*.swt.*[0-9]-javadoc.jar', 'org.eclipse.swt-javadoc.jar'
-		}
-	}
+        copy {
+            from 'build/tmp/swt'
+            include 'org.*.swt.*.jar'
+            into 'build/dependencies'
+            rename 'org.*.swt.*[0-9].jar', 'org.eclipse.swt.jar'
+            rename 'org.*.swt.*[0-9]-sources.jar', 'org.eclipse.swt-sources.jar'
+            rename 'org.*.swt.*[0-9]-javadoc.jar', 'org.eclipse.swt-javadoc.jar'
+        }
+    }
 
-	String[] lines = file('src/main/java/module-info.java') as String[]
-	boolean hasSWTModuleName = false;
-	for(line in lines)
-		if(line.contains(swtName))
-		{
-			hasSWTModuleName = true;
-			break;
-		}
-	if(!hasSWTModuleName)
-	{
-		println "writing module-info.java"
-		new File('src/main/java', 'module-info.java').text = """module org.aph.braillezephyr {
+    String[] lines = file('src/main/java/module-info.java') as String[]
+    boolean hasSWTModuleName = false;
+    for (line in lines)
+        if (line.contains(swtName)) {
+            hasSWTModuleName = true;
+            break;
+        }
+    if (!hasSWTModuleName) {
+        println "writing module-info.java"
+        new File('src/main/java', 'module-info.java').text = """module org.aph.braillezephyr {
 	exports org.aph.braillezephyr;
 	requires java.desktop;
 	requires $swtName;
 }
 """
-	}
+    }
 
-	doLast {
-		new File(buildDir, "version.txt").text = version
-		new File(buildDir, "build-time.txt").text = new Date()
-	}
+    doLast {
+        new File(buildDir, "version.txt").text = version
+        new File(buildDir, "build-time.txt").text = new Date()
+    }
 }
 
 jar {
-	manifest {
-		attributes (
-			'Main-Class': mainClassName,
-			'Implementation-Name': System.getProperty('os.name'),
-			'Implementation-Version': version,
-			'Implementation-Vender': 'American Printing House for the Blind',
-			'Implementation-URL': 'www.aph.org'
-		)
-	}
+    manifest {
+        attributes(
+                'Main-Class': mainClassName,
+                'Implementation-Name': System.getProperty('os.name'),
+                'Implementation-Version': version,
+                'Implementation-Vender': 'American Printing House for the Blind',
+                'Implementation-URL': 'www.aph.org'
+        )
+    }
 }
 
 jlink {
-	options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
-	launcher{
-		name = 'BrailleZephyr'
-	}
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    launcher {
+        name = 'BrailleZephyr'
+    }
 }
 
 run {
-	systemProperties['braillezephyr.version'] = version
+    systemProperties['braillezephyr.version'] = version
 }
 
-task fullJar(type : Jar) {
+task fullJar(type: Jar) {
 
-	manifest {
-		attributes (
-			'Main-Class': mainClassName,
-			'Implementation-Name': 'BrailleZephyr ' + System.getProperty('os.name'),
-			'Implementation-Version': version,
-			'Implementation-Vender': 'American Printing House for the Blind',
-			'Implementation-URL': 'www.aph.org'
-		)
-	}
+    manifest {
+        attributes(
+                'Main-Class': mainClassName,
+                'Implementation-Name': 'BrailleZephyr ' + System.getProperty('os.name'),
+                'Implementation-Version': version,
+                'Implementation-Vender': 'American Printing House for the Blind',
+                'Implementation-URL': 'www.aph.org'
+        )
+    }
 
-	from(configurations.archives.collect { it.isDirectory() ? it : zipTree(it) }) {
-		exclude "META-INF/*.SF"
-		exclude "META-INF/*.DSA"
-		exclude "META-INF/*.RSA"
-	}
+    from(configurations.archives.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
 
-	with jar
+    with jar
 }
 
 task copyDeps(type: Copy) {
-	from configurations.archives
-	into 'build/deps'
+    from configurations.archives
+    into 'build/deps'
 }
